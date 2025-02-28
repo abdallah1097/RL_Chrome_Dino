@@ -30,7 +30,7 @@ class QLearningAgent:
         self.learning_rate = 1e-4
         self.img_cols = 20
         self.img_rows = 40
-        self.observe_timestamps = 64  # 50000 Timestamps before training (Getting experience)
+        self.observe_timestamps = 50000  # Timestamps before training (Getting experience)
         self.frame_per_action = 1
         self.initial_epsilon = 0.1  # Initial Value of Epsilon
         self.final_epsilon = 0.0001  # Final Value of Epsilon
@@ -73,7 +73,7 @@ class QLearningAgent:
 
         # Define Optimizer
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
-        self.criterion = nn.MSELoss()
+        self.criterion = nn.CrossEntropyLoss()
 
     def write_pickle(self, path, value):
         with open(path, 'wb') as f: #dump files into objects folder
@@ -289,31 +289,3 @@ class QLearningAgent:
             s_t = initial_state if terminal else s_t1 #reset game to initial frame if terminate
             time_spent = time_spent + 1
             print(f"Iteration Loss: {loss}")
-            
-            # # save progress every 1000 iterations
-            # if time_spent % 1000 == 0:
-            #     print("Now we save model")
-                
-            #     model.save_weights("model_final.h5", overwrite=True)
-            #     save_obj(D,"D") #saving episodes
-            #     save_obj(t,"time") #caching time steps
-            #     save_obj(epsilon,"epsilon") #cache epsilon to avoid repeated randomness in actions
-            #     loss_df.to_csv("./objects/loss_df.csv",index=False)
-            #     scores_df.to_csv("./objects/scores_df.csv",index=False)
-            #     actions_df.to_csv("./objects/actions_df.csv",index=False)
-            #     with open("model.json", "w") as outfile:
-            #         json.dump(model.to_json(), outfile)
-
-            # # print info
-            # state = ""
-            # if t <= OBSERVE:
-            #     state = "observe"
-            # elif t > OBSERVE and t <= OBSERVE + EXPLORE:
-            #     state = "explore"
-            # else:
-            #     state = "train"
-
-            # print("TIMESTEP", t, "/ STATE", state,             "/ EPSILON", epsilon, "/ ACTION", action_index, "/ REWARD", r_t,             "/ Q_MAX " , np.max(Q_sa), "/ Loss ", loss)
-
-        # print("Episode finished!")
-        # print("************************")
