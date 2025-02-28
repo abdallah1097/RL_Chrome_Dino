@@ -12,7 +12,7 @@ class QLearningDLModel(nn.Module):
         self.conv3 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding=1)
 
         self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(24, 512)  # Adjusted for the output size
+        self.fc1 = nn.Linear(1536, 512)  # Adjusted for the output size
         self.fc2 = nn.Linear(512, num_actions)
 
         self.relu = nn.ReLU()
