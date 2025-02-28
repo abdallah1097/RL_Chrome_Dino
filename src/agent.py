@@ -44,8 +44,9 @@ class QLearningAgent:
 
         # Initialize Game Env attribute
         self._game_env = game_env
+        time.sleep(2)  # Wait for the game to start
         self.jump()
-        time.sleep(.5)  # Wait for the game to start
+        time.sleep(2)  # Wait for the game to start
 
         # Initialize Display instance
         self._display = self.show_img()
@@ -289,3 +290,30 @@ class QLearningAgent:
             time_spent = time_spent + 1
             print(f"Iteration Loss: {loss}")
             
+            # # save progress every 1000 iterations
+            # if time_spent % 1000 == 0:
+            #     print("Now we save model")
+                
+            #     model.save_weights("model_final.h5", overwrite=True)
+            #     save_obj(D,"D") #saving episodes
+            #     save_obj(t,"time") #caching time steps
+            #     save_obj(epsilon,"epsilon") #cache epsilon to avoid repeated randomness in actions
+            #     loss_df.to_csv("./objects/loss_df.csv",index=False)
+            #     scores_df.to_csv("./objects/scores_df.csv",index=False)
+            #     actions_df.to_csv("./objects/actions_df.csv",index=False)
+            #     with open("model.json", "w") as outfile:
+            #         json.dump(model.to_json(), outfile)
+
+            # # print info
+            # state = ""
+            # if t <= OBSERVE:
+            #     state = "observe"
+            # elif t > OBSERVE and t <= OBSERVE + EXPLORE:
+            #     state = "explore"
+            # else:
+            #     state = "train"
+
+            # print("TIMESTEP", t, "/ STATE", state,             "/ EPSILON", epsilon, "/ ACTION", action_index, "/ REWARD", r_t,             "/ Q_MAX " , np.max(Q_sa), "/ Loss ", loss)
+
+        # print("Episode finished!")
+        # print("************************")
