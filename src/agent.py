@@ -202,12 +202,12 @@ class QLearningAgent:
             # Choose an epsilon-greedy action
             if time_spent % self.frame_per_action == 0: #parameter to skip frames for actions
                 if  random.random() <= epsilon: #randomly explore an action
-                    print("Picking Random Action")
+                    # print("Picking Random Action")
                     action_index = random.randrange(self.num_actions)
                     a_t[0] = 1
                 else:
                     torch_input = torch.from_numpy(s_t.transpose(0, 3, 1, 2)).float().to("cuda")
-                    print(f"Picking Action from Model. States Shape: {torch_input.shape, torch_input.dtype}")
+                    # print(f"Picking Action from Model. States Shape: {torch_input.shape, torch_input.dtype}")
                     q = self.model(torch_input)  #input a stack of 4 images, get the prediction
                     q = q.detach().cpu().numpy()
                     max_Q = np.argmax(q) # chosing index with maximum q value
@@ -217,13 +217,13 @@ class QLearningAgent:
             # Reducing the epsilon (exploration parameter) gradually
             if epsilon > self.final_epsilon and time_spent > self.observe_timestamps:
                 epsilon -= (self.initial_epsilon - self.final_epsilon) / self.explore_num_frames 
-            print(f"Epsilon Value: {epsilon}")
+            # print(f"Epsilon Value: {epsilon}")
 
             # Perform the selected action and observed next state and reward
             x_t1, r_t, terminal = self.get_state(a_t)
 
             # Update Loop Time
-            print(f"loop took {time.time()-start_time} seconds")
+            # print(f"loop took {time.time()-start_time} seconds")
             start_time = time.time()
 
             x_t1 = x_t1.reshape(1, x_t1.shape[0], x_t1.shape[1], 1)  # 1x20x40x1
@@ -264,9 +264,28 @@ class QLearningAgent:
                     else:
                         targets[i, action_t] = reward_t + self.gamma * np.max(Q_sa)
 
+                # Train Model on Batch
+                self.model.train()  # Set the model to training mode
+                self.optimizer.zero_grad()  # Zero the gradients
+
+                # Forward pass
+                inputs_torch = torch.from_numpy(inputs.transpose(0, 3, 1, 2)).float().to("cuda")
+                targets_torch = torch.from_numpy(targets).float().to("cuda")
+                predicted_outputs = self.model(inputs_torch)
+
+                # Compute loss
+                iteration_loss = self.criterion(predicted_outputs, targets_torch)
+                loss += iteration_loss.item()
+
+                # Backward pass (compute gradients)
+                iteration_loss.backward()
+
+                # Update model parameters
+                self.optimizer.step()
             else:
-                # artificial time delay as training done with this delay
+                # Artificial time delay as training done with this delay
                 time.sleep(0.12)
             s_t = initial_state if terminal else s_t1 #reset game to initial frame if terminate
             time_spent = time_spent + 1
+            print(f"Iteration Loss: {loss}")
             
