@@ -7,7 +7,11 @@ import numpy as np
 import pickle
 from collections import deque
 from src.model import QLearningDLModel
+import torch
+import torch.nn as nn
 from torchinfo import summary
+import torch.optim as optim
+import random
 
 
 class QLearningAgent:
@@ -22,16 +26,25 @@ class QLearningAgent:
 
         # Model Parameters
         self.img_channels = 4
-        self.num_actions = 2
+        self.num_actions = 2  # Two actions: [0: do nothing, 1: jump]
         self.learning_rate = 1e-4
         self.img_cols = 20
         self.img_rows = 40
+        self.observe_timestamps = 50000  # Timestamps before training (Getting experience)
+        self.frame_per_action = 1
+        self.initial_epsilon = 0.1  # Initial Value of Epsilon
+        self.final_epsilon = 0.0001  # Final Value of Epsilon
+        self.explore_num_frames = 100000  # Frames over which to have epsilon (Exploration)
+
+
 
         # Initialize Experience Queue
         self.dqueue = deque()
 
         # Initialize Game Env attribute
         self._game_env = game_env
+        self.jump()
+        time.sleep(.5)  # Wait for the game to start
 
         # Initialize Display instance
         self._display = self.show_img()
@@ -43,7 +56,7 @@ class QLearningAgent:
         self.actions_df = pd.read_csv(self.actions_file_path) if os.path.isfile(self.actions_file_path) else pd.DataFrame(columns = ['actions'])
 
         # Write pickle files
-        self.write_pickle(path=self.epsilon_file_path, value=0.1)
+        self.write_pickle(path=self.epsilon_file_path, value=self.initial_epsilon)
         self.write_pickle(path=self.time_file_path, value=0)
         self.write_pickle(path=self.dqueue_file_path, value=self.dqueue)
 
@@ -53,8 +66,12 @@ class QLearningAgent:
             num_actions=self.num_actions,
             img_cols=self.img_cols,
             img_rows=self.img_rows,
-        )
-        summary(self.model, input_size=(self.img_channels, self.img_cols, self.img_rows))
+        ).to("cuda")
+        summary(self.model, input_size=(1, self.img_channels, self.img_cols, self.img_rows))
+
+        # Define Optimizer
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        self.criterion = nn.MSELoss()
 
     def write_pickle(self, path, value):
         with open(path, 'wb') as f: #dump files into objects folder
@@ -68,10 +85,10 @@ class QLearningAgent:
         time.sleep(.5)
 
     def is_running(self):
-        return self._game_env.get_playing()
+        return self._game_env.is_playing()
 
     def is_crashed(self):
-        return self._game_env.get_crashed()
+        return self._game_env.is_crashed()
 
     def jump(self):
         self._game_env.jump()
@@ -157,4 +174,43 @@ class QLearningAgent:
         """
         Function to Train the agent
         """
-        pass
+        time_spent = 0
+        epsilon = self.initial_epsilon
+
+        # get the first state by doing nothing
+        do_nothing = np.zeros(self.num_actions)
+        do_nothing[0] = 1
+
+        # Get initial state
+        x_t, r_0, terminal = self.get_state(do_nothing)
+        # Stack 4 images to create placeholder input
+        s_t = np.stack((x_t, x_t, x_t, x_t), axis=2)
+        s_t = s_t.reshape(1, s_t.shape[0], s_t.shape[1], s_t.shape[2])  # Reshape it to be 1*20*40*4
+
+        # Assign Initial Reshaped State
+        initial_state = s_t 
+
+        while (True):
+            action_index = 0
+            a_t = np.zeros([self.num_actions])  # Initial Actions
+
+            # Choose an epsilon-greedy action
+            if time_spent % self.frame_per_action == 0: #parameter to skip frames for actions
+                if  random.random() <= epsilon: #randomly explore an action
+                    print("Picking Random Action")
+                    action_index = random.randrange(self.num_actions)
+                    a_t[0] = 1
+                else:
+                    torch_input = torch.from_numpy(s_t.transpose(0, 3, 1, 2)).float().to("cuda")
+                    print(f"Picking Action from Model. States Shape: {torch_input.shape, torch_input.dtype}")
+                    q = self.model(torch_input)  #input a stack of 4 images, get the prediction
+                    q = q.detach().cpu().numpy()
+                    max_Q = np.argmax(q) # chosing index with maximum q value
+                    action_index = max_Q 
+                    a_t[action_index] = 1  # o=> do nothing, 1=> jump
+
+            # Reducing the epsilon (exploration parameter) gradually
+            if epsilon > self.final_epsilon and time_spent > self.observe_timestamps:
+                epsilon -= (self.initial_epsilon - self.final_epsilon) / self.explore_num_frames 
+            print(f"Epsilon Value: {epsilon}")
+
