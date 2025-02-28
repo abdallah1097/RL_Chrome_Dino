@@ -152,3 +152,9 @@ class QLearningAgent:
         image = image[2:38, 10:50]  # Crop out the Dino agent from the frame
         image = cv2.Canny(image, threshold1=100, threshold2=200)  # Apply Canny edge detection
         return image
+
+    def train(self):
+        """
+        Function to Train the agent
+        """
+        pass
