@@ -6,6 +6,7 @@ from PIL import ImageGrab
 import numpy as np
 import pickle
 from collections import deque
+from src.model import QLearningDLModel
 
 
 class QLearningAgent:
@@ -17,6 +18,15 @@ class QLearningAgent:
         self.epsilon_file_path = "./objects/epsilon.pkl"
         self.time_file_path = "./objects/time.pkl"
         self.dqueue_file_path = "./objects/queue.pkl"
+
+        # Model Parameters
+        self.img_channels = 4
+        self.num_actions = 2
+        self.learning_rate = 1e-4
+        self.img_cols = 20
+        self.img_rows = 40
+
+        # Initialize Experience Queue
         self.dqueue = deque()
 
         # Initialize Game Env attribute
@@ -35,6 +45,15 @@ class QLearningAgent:
         self.write_pickle(path=self.epsilon_file_path, value=0.1)
         self.write_pickle(path=self.time_file_path, value=0)
         self.write_pickle(path=self.dqueue_file_path, value=self.dqueue)
+
+        # Define QLearning DL Model
+        self.model = QLearningDLModel(
+            self.img_channels,
+            self.num_actions,
+            self.learning_rate, self.img_cols,
+            self.img_rows,
+        )
+        print(f"Model: {self.model}")
 
     def write_pickle(self, path, value):
         with open(path, 'wb') as f: #dump files into objects folder
