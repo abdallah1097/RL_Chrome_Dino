@@ -30,14 +30,14 @@ class QLearningAgent:
         self.learning_rate = 1e-4
         self.img_cols = 20
         self.img_rows = 40
-        self.observe_timestamps = 50000  # Timestamps before training (Getting experience)
+        self.observe_timestamps = 64  # 50000 Timestamps before training (Getting experience)
         self.frame_per_action = 1
         self.initial_epsilon = 0.1  # Initial Value of Epsilon
         self.final_epsilon = 0.0001  # Final Value of Epsilon
         self.explore_num_frames = 100000  # Frames over which to have epsilon (Exploration)
         self.replay_memory_length = 50000  # Number of previous transitions to remember
-
-
+        self.batch_size = 32  # Batch Size
+        self.gamma = 0.99  # Decay rate of past observations original 0.99
 
         # Initialize Experience Queue
         self.dqueue = deque()
@@ -236,3 +236,37 @@ class QLearningAgent:
             if len(self.dqueue) > self.replay_memory_length:
                 self.dqueue.popleft()
 
+            # Only train if done observing
+            if time_spent > self.observe_timestamps: 
+
+                # Sample a minibatch to train on
+                minibatch = random.sample(self.dqueue, self.batch_size)
+                inputs = np.zeros((self.batch_size, s_t.shape[1], s_t.shape[2], s_t.shape[3]))   #32, 20, 40, 4
+                targets = np.zeros((inputs.shape[0], self.num_actions))                         #32, 2
+
+                # Now we do the experience replay
+                for i in range(0, len(minibatch)):
+                    state_t = minibatch[i][0]    # 4D stack of images
+                    action_t = minibatch[i][1]   #This is action index
+                    reward_t = minibatch[i][2]   #reward at state_t due to action_t
+                    state_t1 = minibatch[i][3]   #next state
+                    terminal = minibatch[i][4]   #wheather the agent died or survided due the action
+
+                    inputs[i:i + 1] = state_t
+                    state_t_torch_input = torch.from_numpy(state_t.transpose(0, 3, 1, 2)).float().to("cuda")
+                    state_t1_torch_input = torch.from_numpy(state_t1.transpose(0, 3, 1, 2)).float().to("cuda")
+
+                    targets[i] = self.model(state_t_torch_input).detach().cpu().numpy()  # Predicted q values
+                    Q_sa = self.model(state_t1_torch_input).detach().cpu().numpy()  # Predict q values for next step
+
+                    if terminal:
+                        targets[i, action_t] = reward_t # if terminated, only equals reward
+                    else:
+                        targets[i, action_t] = reward_t + self.gamma * np.max(Q_sa)
+
+            else:
+                # artificial time delay as training done with this delay
+                time.sleep(0.12)
+            s_t = initial_state if terminal else s_t1 #reset game to initial frame if terminate
+            time_spent = time_spent + 1
+            
