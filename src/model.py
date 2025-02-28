@@ -4,7 +4,7 @@ import torch.optim as optim
 
 
 class QLearningDLModel(nn.Module):
-    def __init__(self, img_channels, actions, learning_rate, img_cols, img_rows):
+    def __init__(self, img_channels, num_actions, img_cols, img_rows):
         super(QLearningDLModel, self).__init__()
 
         self.conv1 = nn.Conv2d(in_channels=img_channels, out_channels=32, kernel_size=8, stride=4, padding=4)
@@ -12,8 +12,8 @@ class QLearningDLModel(nn.Module):
         self.conv3 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding=1)
 
         self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(64 * ((img_cols // 16) * (img_rows // 16)), 512)  # Adjusted for the output size
-        self.fc2 = nn.Linear(512, actions)
+        self.fc1 = nn.Linear(24, 512)  # Adjusted for the output size
+        self.fc2 = nn.Linear(512, num_actions)
 
         self.relu = nn.ReLU()
 
