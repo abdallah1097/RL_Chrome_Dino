@@ -1,7 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import os
-
+import time
 
 class DinoGame:
     def __init__(self):
@@ -14,10 +14,11 @@ class DinoGame:
         self._driver.execute_script("Runner.config.ACCELERATION=0")
 
     def is_crashed(self):
-        pass
+        return self._driver.execute_script("return Runner.instance_.crashed")
 
     def is_playing(self):
-        pass
+        return self._driver.execute_script("return Runner.instance_.playing")
 
     def restart(self):
-        pass
+        self._driver.execute_script("Runner.instance_.restart()")
+
