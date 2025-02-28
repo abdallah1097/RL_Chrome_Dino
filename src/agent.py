@@ -35,6 +35,7 @@ class QLearningAgent:
         self.initial_epsilon = 0.1  # Initial Value of Epsilon
         self.final_epsilon = 0.0001  # Final Value of Epsilon
         self.explore_num_frames = 100000  # Frames over which to have epsilon (Exploration)
+        self.replay_memory_length = 50000  # Number of previous transitions to remember
 
 
 
@@ -174,6 +175,7 @@ class QLearningAgent:
         """
         Function to Train the agent
         """
+        start_time = time.time()
         time_spent = 0
         epsilon = self.initial_epsilon
 
@@ -191,7 +193,10 @@ class QLearningAgent:
         initial_state = s_t 
 
         while (True):
+            loss = 0
+            Q_sa = 0
             action_index = 0
+            r_t = 0  # Initial Reward
             a_t = np.zeros([self.num_actions])  # Initial Actions
 
             # Choose an epsilon-greedy action
@@ -213,4 +218,21 @@ class QLearningAgent:
             if epsilon > self.final_epsilon and time_spent > self.observe_timestamps:
                 epsilon -= (self.initial_epsilon - self.final_epsilon) / self.explore_num_frames 
             print(f"Epsilon Value: {epsilon}")
+
+            # Perform the selected action and observed next state and reward
+            x_t1, r_t, terminal = self.get_state(a_t)
+
+            # Update Loop Time
+            print(f"loop took {time.time()-start_time} seconds")
+            start_time = time.time()
+
+            x_t1 = x_t1.reshape(1, x_t1.shape[0], x_t1.shape[1], 1)  # 1x20x40x1
+            s_t1 = np.append(x_t1, s_t[:, :, :, :3], axis=3)  # Append the new image to input stack and remove the first one
+
+            # Store the transition in Dqueue
+            self.dqueue.append((s_t, action_index, r_t, s_t1, terminal))
+
+            # Assure Experience Replay Length to avoid memory overflow
+            if len(self.dqueue) > self.replay_memory_length:
+                self.dqueue.popleft()
 
