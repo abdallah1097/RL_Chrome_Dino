@@ -199,32 +199,35 @@ class QLearningAgent:
             action_index = 0
             r_t = 0  # Initial Reward
             a_t = np.zeros([self.num_actions])  # Initial Actions
+            text_to_be_printed = ""
 
             # Choose an epsilon-greedy action
             if time_spent % self.frame_per_action == 0: #parameter to skip frames for actions
                 if  random.random() <= epsilon: #randomly explore an action
-                    # print("Picking Random Action")
                     action_index = random.randrange(self.num_actions)
+                    text_to_be_printed += f"Picking Random Action: {action_index}"
                     a_t[0] = 1
                 else:
                     torch_input = torch.from_numpy(s_t.transpose(0, 3, 1, 2)).float().to("cuda")
-                    # print(f"Picking Action from Model. States Shape: {torch_input.shape, torch_input.dtype}")
+                    text_to_be_printed += f"Picking Action from Model. States Shape: {torch_input.shape, torch_input.dtype}"
                     q = self.model(torch_input)  #input a stack of 4 images, get the prediction
                     q = q.detach().cpu().numpy()
                     max_Q = np.argmax(q) # chosing index with maximum q value
-                    action_index = max_Q 
+                    action_index = max_Q
+                    text_to_be_printed += f" Action Index: {action_index}"
                     a_t[action_index] = 1  # o=> do nothing, 1=> jump
 
             # Reducing the epsilon (exploration parameter) gradually
             if epsilon > self.final_epsilon and time_spent > self.observe_timestamps:
                 epsilon -= (self.initial_epsilon - self.final_epsilon) / self.explore_num_frames 
-            # print(f"Epsilon Value: {epsilon}")
+            text_to_be_printed += f" | Epsilon Value: {epsilon}"
 
             # Perform the selected action and observed next state and reward
             x_t1, r_t, terminal = self.get_state(a_t)
+            text_to_be_printed += f" | Reward: {r_t}"
 
             # Update Loop Time
-            # print(f"loop took {time.time()-start_time} seconds")
+            text_to_be_printed += f" | loop took {time.time()-start_time} seconds"
             start_time = time.time()
 
             x_t1 = x_t1.reshape(1, x_t1.shape[0], x_t1.shape[1], 1)  # 1x20x40x1
@@ -283,9 +286,13 @@ class QLearningAgent:
 
                 # Update model parameters
                 self.optimizer.step()
+
+                text_to_be_printed += f" | Iteration Loss: {loss}"
+                print(text_to_be_printed)
             else:
                 # Artificial time delay as training done with this delay
+                print(f"Exploring Step: {time_spent}")
                 time.sleep(0.12)
             s_t = initial_state if terminal else s_t1 #reset game to initial frame if terminate
             time_spent = time_spent + 1
-            print(f"Iteration Loss: {loss}")
+
