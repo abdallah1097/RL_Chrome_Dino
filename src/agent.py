@@ -30,7 +30,7 @@ class QLearningAgent:
         self.learning_rate = 1e-4
         self.img_cols = 20
         self.img_rows = 40
-        self.observe_timestamps = 50000  # Timestamps before training (Getting experience)
+        self.observe_timestamps = 64  # Timestamps before training (Getting experience)
         self.frame_per_action = 1
         self.initial_epsilon = 0.1  # Initial Value of Epsilon
         self.final_epsilon = 0.0001  # Final Value of Epsilon
@@ -73,7 +73,7 @@ class QLearningAgent:
 
         # Define Optimizer
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = nn.MSELoss()
 
     def write_pickle(self, path, value):
         with open(path, 'wb') as f: #dump files into objects folder
@@ -280,6 +280,7 @@ class QLearningAgent:
                 # Compute loss
                 iteration_loss = self.criterion(predicted_outputs, targets_torch)
                 loss += iteration_loss.item()
+                self.loss_df.loc[len(self.loss_df)] = loss
 
                 # Backward pass (compute gradients)
                 iteration_loss.backward()
@@ -293,6 +294,20 @@ class QLearningAgent:
                 # Artificial time delay as training done with this delay
                 print(f"Exploring Step: {time_spent}")
                 time.sleep(0.12)
-            s_t = initial_state if terminal else s_t1 #reset game to initial frame if terminate
+            s_t = initial_state if terminal else s_t1  # Reset game to initial frame if terminate
             time_spent = time_spent + 1
 
+            # save progress every 1000 iterations
+            if time_spent % 1000 == 0:
+                print("Now we save model")
+                
+                torch.save(self.model.state_dict(), "./objects/last_model_iteration.pth")
+                self.model.load_state_dict(torch.load("./objects/last_model_iteration.pth"))
+
+                self.write_pickle(path=self.epsilon_file_path, value=epsilon)  # Cache epsilon to avoid repeated randomness in actions
+                self.write_pickle(path=self.time_file_path, value=time_spent)  # Caching time steps
+                self.write_pickle(path=self.dqueue_file_path, value=self.dqueue)  # Caching the queue
+
+                self.loss_df.to_csv("./objects/loss_df.csv",index=False)
+                self.scores_df.to_csv("./objects/scores_df.csv",index=False)
+                self.actions_df.to_csv("./objects/actions_df.csv",index=False)
