@@ -4,10 +4,10 @@ class DinoGame:
         pass
 
     def is_crashed(self):
-        return self._driver.execute_script("return Runner.instance_.crashed")
+        pass
 
     def is_playing(self):
-        return self._driver.execute_script("return Runner.instance_.playing")
+        pass
 
     def restart(self):
         pass
