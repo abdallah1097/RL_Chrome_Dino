@@ -5,7 +5,7 @@ from selenium.webdriver.common.keys import Keys
 import os
 import time
 
-class DinoGame:
+class DinoGameEnv:
     def __init__(self):
         """
         Initializes a Chrome WebDriver instance for running the Dino game.
