@@ -30,13 +30,13 @@ class QLearningAgent:
         self.learning_rate = 1e-4
         self.img_cols = 20
         self.img_rows = 40
-        self.observe_timestamps = 64  # Timestamps before training (Getting experience)
+        self.observe_timestamps = 10000  # Timestamps before training (Getting experience)
         self.frame_per_action = 1
         self.initial_epsilon = 0.1  # Initial Value of Epsilon
         self.final_epsilon = 0.0001  # Final Value of Epsilon
         self.explore_num_frames = 100000  # Frames over which to have epsilon (Exploration)
         self.replay_memory_length = 50000  # Number of previous transitions to remember
-        self.batch_size = 32  # Batch Size
+        self.batch_size = 2048  # Batch Size
         self.gamma = 0.99  # Decay rate of past observations original 0.99
 
         # Initialize Experience Queue
@@ -205,29 +205,29 @@ class QLearningAgent:
             if time_spent % self.frame_per_action == 0: #parameter to skip frames for actions
                 if  random.random() <= epsilon: #randomly explore an action
                     action_index = random.randrange(self.num_actions)
-                    text_to_be_printed += f"Picking Random Action: {action_index}"
+                    text_to_be_printed += f"[Random] Action: {action_index}"
                     a_t[0] = 1
                 else:
                     torch_input = torch.from_numpy(s_t.transpose(0, 3, 1, 2)).float().to("cuda")
-                    text_to_be_printed += f"Picking Action from Model. States Shape: {torch_input.shape, torch_input.dtype}"
+                    text_to_be_printed += f"[Model] Action:"
                     q = self.model(torch_input)  #input a stack of 4 images, get the prediction
                     q = q.detach().cpu().numpy()
                     max_Q = np.argmax(q) # chosing index with maximum q value
                     action_index = max_Q
-                    text_to_be_printed += f" Action Index: {action_index}"
+                    text_to_be_printed += f" {action_index}"
                     a_t[action_index] = 1  # o=> do nothing, 1=> jump
 
             # Reducing the epsilon (exploration parameter) gradually
             if epsilon > self.final_epsilon and time_spent > self.observe_timestamps:
                 epsilon -= (self.initial_epsilon - self.final_epsilon) / self.explore_num_frames 
-            text_to_be_printed += f" | Epsilon Value: {epsilon}"
+            text_to_be_printed += f" | [Epsilon]: {epsilon:.5f}"
 
             # Perform the selected action and observed next state and reward
             x_t1, r_t, terminal = self.get_state(a_t)
-            text_to_be_printed += f" | Reward: {r_t}"
+            text_to_be_printed += f" | [Reward]: {r_t:.4f}"
 
             # Update Loop Time
-            text_to_be_printed += f" | loop took {time.time()-start_time} seconds"
+            text_to_be_printed += f" | [Time] {time.time()-start_time}"
             start_time = time.time()
 
             x_t1 = x_t1.reshape(1, x_t1.shape[0], x_t1.shape[1], 1)  # 1x20x40x1
@@ -288,18 +288,18 @@ class QLearningAgent:
                 # Update model parameters
                 self.optimizer.step()
 
-                text_to_be_printed += f" | Iteration Loss: {loss}"
-                print(text_to_be_printed)
+                text_to_be_printed += f" | [Loss]: {iteration_loss.item()}"
+                print(text_to_be_printed, end="\r")
             else:
                 # Artificial time delay as training done with this delay
-                print(f"Exploring Step: {time_spent}")
+                print(f"[Exploring] Step: {time_spent}", end="\r")
                 time.sleep(0.12)
             s_t = initial_state if terminal else s_t1  # Reset game to initial frame if terminate
             time_spent = time_spent + 1
 
             # save progress every 1000 iterations
             if time_spent % 1000 == 0:
-                print("Now we save model")
+                print("[Saving Model]\n")
                 
                 torch.save(self.model.state_dict(), "./objects/last_model_iteration.pth")
                 self.model.load_state_dict(torch.load("./objects/last_model_iteration.pth"))
