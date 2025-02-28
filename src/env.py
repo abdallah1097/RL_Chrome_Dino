@@ -23,7 +23,7 @@ class DinoGameEnv:
         chrome_options.add_argument("disable-infobars")
         self._driver = webdriver.Chrome(options=chrome_options)
         self._driver.set_window_position(x=-10,y=0)
-        self._driver.set_window_size(200, 300)
+        self._driver.set_window_size(300, 500)
         self._driver.get(f"file://{os.path.abspath('src/dino_game/dino.html')}")  # Ensure it’s a file URL
         self._driver.execute_script("Runner.config.ACCELERATION=0")
 
