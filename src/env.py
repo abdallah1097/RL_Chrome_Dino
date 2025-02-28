@@ -1,5 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.keys import Keys
+
 import os
 import time
 
@@ -22,3 +24,5 @@ class DinoGame:
     def restart(self):
         self._driver.execute_script("Runner.instance_.restart()")
 
+    def jump(self):
+        self._driver.find_element_by_tag_name("body").send_keys(Keys.ARROW_UP)
