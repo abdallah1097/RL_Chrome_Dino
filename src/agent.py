@@ -4,6 +4,8 @@ import pandas as pd
 import os
 from PIL import ImageGrab
 import numpy as np
+import pickle
+from collections import deque
 
 
 class QLearningAgent:
@@ -12,6 +14,10 @@ class QLearningAgent:
         self.loss_file_path = "./objects/loss_df.csv"
         self.actions_file_path = "./objects/actions_df.csv"
         self.scores_file_path = "./objects/scores_df.csv"
+        self.epsilon_file_path = "./objects/epsilon.pkl"
+        self.time_file_path = "./objects/time.pkl"
+        self.dqueue_file_path = "./objects/queue.pkl"
+        self.dqueue = deque()
 
         # Initialize Game Env attribute
         self._game_env = game_env
@@ -24,6 +30,15 @@ class QLearningAgent:
         self.loss_df = pd.read_csv(self.loss_file_path) if os.path.isfile(self.loss_file_path) else pd.DataFrame(columns =['loss'])
         self.scores_df = pd.read_csv(self.scores_file_path) if os.path.isfile(self.scores_file_path) else pd.DataFrame(columns = ['scores'])
         self.actions_df = pd.read_csv(self.actions_file_path) if os.path.isfile(self.actions_file_path) else pd.DataFrame(columns = ['actions'])
+
+        # Write pickle files
+        self.write_pickle(path=self.epsilon_file_path, value=0.1)
+        self.write_pickle(path=self.time_file_path, value=0)
+        self.write_pickle(path=self.dqueue_file_path, value=self.dqueue)
+
+    def write_pickle(self, path, value):
+        with open(path, 'wb') as f: #dump files into objects folder
+            pickle.dump(value, f, pickle.HIGHEST_PROTOCOL)
 
     def start_game(self):
         """
