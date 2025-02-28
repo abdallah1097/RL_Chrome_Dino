@@ -7,6 +7,7 @@ import numpy as np
 import pickle
 from collections import deque
 from src.model import QLearningDLModel
+from torchinfo import summary
 
 
 class QLearningAgent:
@@ -48,12 +49,12 @@ class QLearningAgent:
 
         # Define QLearning DL Model
         self.model = QLearningDLModel(
-            self.img_channels,
-            self.num_actions,
-            self.learning_rate, self.img_cols,
-            self.img_rows,
+            img_channels=self.img_channels,
+            num_actions=self.num_actions,
+            img_cols=self.img_cols,
+            img_rows=self.img_rows,
         )
-        print(f"Model: {self.model}")
+        summary(self.model, input_size=(self.img_channels, self.img_cols, self.img_rows))
 
     def write_pickle(self, path, value):
         with open(path, 'wb') as f: #dump files into objects folder
