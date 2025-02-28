@@ -27,6 +27,9 @@ class DinoGame:
     def jump(self):
         self._driver.find_element_by_tag_name("body").send_keys(Keys.ARROW_UP)
 
+    def duck(self):
+        self._driver.find_element_by_tag_name("body").send_keys(Keys.ARROW_DOWN)
+
     def get_score(self):
         score_array = self._driver.execute_script("return Runner.instance_.distanceMeter.digits")
         score = ''.join(score_array) # the javascript object is of type array with score in the formate[1,0,0] which is 100.
