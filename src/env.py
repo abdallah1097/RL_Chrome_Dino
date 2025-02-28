@@ -1,6 +1,8 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+
 
 import os
 import time
@@ -48,18 +50,21 @@ class DinoGameEnv:
         Restarts the Dino game by triggering the restart function in the game script.
         """
         self._driver.execute_script("Runner.instance_.restart()")
+        time.sleep(0.25)  # Sleep to let game restart
 
     def jump(self):
         """
         Makes the Dino character jump by simulating an 'Arrow Up' key press.
         """
-        self._driver.find_element_by_tag_name("body").send_keys(Keys.ARROW_UP)
+        element = self._driver.find_element(By.TAG_NAME, "body")
+        element.send_keys(Keys.ARROW_UP)
 
     def duck(self):
         """
         Makes the Dino character duck by simulating an 'Arrow Down' key press.
         """
-        self._driver.find_element_by_tag_name("body").send_keys(Keys.ARROW_DOWN)
+        element = self._driver.find_element(By.TAG_NAME, "body")
+        element.send_keys(Keys.ARROW_DOWN)
 
     def get_score(self):
         """
